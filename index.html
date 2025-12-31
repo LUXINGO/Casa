@@ -1,0 +1,3192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Solana Power Trader</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Korapay Checkout -->
+    <script src="https://checkout.korapay.com/korapay-checkout.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-storage-compat.js"></script>
+    
+    <!-- TradingView Widget -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        :root {
+            --primary: #9945FF;
+            --primary-dark: #7A2CCB;
+            --secondary: #14F195;
+            --accent: #00D4FF;
+            --dark-bg: #0F0F1E;
+            --card-bg: #1A1A2E;
+            --card-hover: #22223D;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B0B0D0;
+            --text-muted: #8888AA;
+            --profit: #00FF9D;
+            --loss: #FF4D6D;
+            --buy: #00C9FF;
+            --sell: #FF4757;
+            --border: #2A2A4A;
+            --success: #00D4AA;
+            --warning: #FFB347;
+            --info: #5D8AA8;
+            --gradient-primary: linear-gradient(135deg, #9945FF 0%, #14F195 100%);
+            --gradient-dark: linear-gradient(135deg, #0F0F1E 0%, #1A1A2E 100%);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 15px 50px rgba(0, 0, 0, 0.4);
+            --radius: 16px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        body {
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(153, 69, 255, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(20, 241, 149, 0.1) 0%, transparent 20%);
+        }
+        
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 280px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            z-index: 100;
+        }
+        
+        .sidebar-header {
+            padding: 30px 25px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+        }
+        
+        .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .nav-menu {
+            flex: 1;
+            padding: 25px 0;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px 25px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: rgba(153, 69, 255, 0.1);
+            color: var(--text-primary);
+            border-left-color: var(--primary);
+        }
+        
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(153, 69, 255, 0.2), transparent);
+            color: var(--text-primary);
+            border-left-color: var(--primary);
+        }
+        
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 20px;
+        }
+        
+        .nav-badge {
+            margin-left: auto;
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .sidebar-footer {
+            padding: 25px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+        
+        .user-profile:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary);
+            box-shadow: 0 0 0 3px rgba(153, 69, 255, 0.3);
+        }
+        
+        .user-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .user-info p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .top-header {
+            padding: 25px 30px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, var(--text-primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header-left p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .balance-display {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .balance-card {
+            background: var(--gradient-dark);
+            padding: 20px 30px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            min-width: 200px;
+            transition: var(--transition);
+        }
+        
+        .balance-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+            border-color: var(--primary);
+        }
+        
+        .balance-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .balance-amount {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Page Container */
+        .page-container {
+            flex: 1;
+            padding: 30px;
+            background: transparent;
+        }
+        
+        /* Auth Pages */
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: var(--gradient-dark);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .auth-box {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 50px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .auth-logo-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient-primary);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+        }
+        
+        .auth-title {
+            font-size: 32px;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .auth-subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .form-group {
+            position: relative;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 18px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(153, 69, 255, 0.2);
+            background: rgba(153, 69, 255, 0.05);
+        }
+        
+        .btn {
+            padding: 18px 30px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(153, 69, 255, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .btn-google {
+            background: white;
+            color: #333;
+        }
+        
+        .btn-google:hover {
+            background: #f8f8f8;
+            transform: translateY(-2px);
+        }
+        
+        .auth-footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .auth-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        
+        .auth-link:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+        
+        /* Dashboard Page */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 25px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .chart-title {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chart-title i {
+            color: var(--primary);
+            font-size: 24px;
+        }
+        
+        .trading-panel {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 25px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        
+        .round-info-card {
+            background: linear-gradient(135deg, rgba(153, 69, 255, 0.2), rgba(20, 241, 149, 0.2));
+            border: 1px solid rgba(153, 69, 255, 0.3);
+            border-radius: var(--radius);
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .round-info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+        
+        .phase-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .timer {
+            font-size: 48px;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .trade-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .trade-btn {
+            padding: 25px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .buy-btn {
+            background: linear-gradient(135deg, rgba(0, 201, 255, 0.2), rgba(0, 201, 255, 0.05));
+            border: 2px solid var(--buy);
+            color: var(--buy);
+        }
+        
+        .buy-btn:hover {
+            background: linear-gradient(135deg, var(--buy), rgba(0, 201, 255, 0.7));
+            color: white;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 201, 255, 0.3);
+        }
+        
+        .sell-btn {
+            background: linear-gradient(135deg, rgba(255, 71, 87, 0.2), rgba(255, 71, 87, 0.05));
+            border: 2px solid var(--sell);
+            color: var(--sell);
+        }
+        
+        .sell-btn:hover {
+            background: linear-gradient(135deg, var(--sell), rgba(255, 71, 87, 0.7));
+            color: white;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(255, 71, 87, 0.3);
+        }
+        
+        .trade-btn i {
+            font-size: 28px;
+        }
+        
+        .lot-controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .lot-btn {
+            padding: 15px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .lot-btn:hover {
+            background: rgba(153, 69, 255, 0.2);
+            border-color: var(--primary);
+        }
+        
+        .lot-btn.active {
+            background: var(--gradient-primary);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 5px 15px rgba(153, 69, 255, 0.4);
+        }
+        
+        .tp-sl-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .tp-sl-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 15px;
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+        
+        .tp-sl-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        /* Open Trades */
+        .open-trades-container {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 25px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .trades-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .trade-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .trade-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+        
+        .trade-card.buy::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--buy);
+        }
+        
+        .trade-card.sell::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--sell);
+        }
+        
+        .trade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .trade-type {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        
+        .trade-type.buy {
+            color: var(--buy);
+        }
+        
+        .trade-type.sell {
+            color: var(--sell);
+        }
+        
+        .trade-profit {
+            font-size: 24px;
+            font-weight: 800;
+        }
+        
+        .profit-positive {
+            color: var(--profit);
+        }
+        
+        .profit-negative {
+            color: var(--loss);
+        }
+        
+        .trade-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .detail-item label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-item span {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .trade-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .close-btn {
+            background: linear-gradient(135deg, var(--loss), #FF2E4A);
+            color: white;
+        }
+        
+        .close-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 77, 109, 0.4);
+        }
+        
+        /* Players Section */
+        .players-container {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 25px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        
+        .players-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .players-count {
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .player-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .player-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+        
+        .player-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary);
+        }
+        
+        .player-info {
+            flex: 1;
+        }
+        
+        .player-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        
+        .player-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+        }
+        
+        .player-profit {
+            font-weight: 700;
+            font-size: 18px;
+        }
+        
+        .player-profit.positive {
+            color: var(--profit);
+        }
+        
+        .player-profit.negative {
+            color: var(--loss);
+        }
+        
+        /* Profile Page */
+        .profile-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        
+        .profile-avatar-container {
+            position: relative;
+        }
+        
+        .profile-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid var(--primary);
+            box-shadow: 0 0 0 5px rgba(153, 69, 255, 0.3);
+        }
+        
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 45px;
+            height: 45px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .avatar-upload-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(153, 69, 255, 0.6);
+        }
+        
+        .profile-info h2 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--text-primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .profile-info p {
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        
+        .profile-stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--secondary);
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .profile-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 30px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        
+        .profile-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+        }
+        
+        .settings-grid {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .payment-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        /* Payment Modal */
+        .payment-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .payment-content {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 40px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+        
+        .payment-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .payment-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .close-payment {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .close-payment:hover {
+            color: var(--text-primary);
+        }
+        
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .payment-method {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .payment-method:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+        
+        .payment-method.active {
+            background: rgba(153, 69, 255, 0.2);
+            border-color: var(--primary);
+        }
+        
+        .payment-method i {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        
+        .payment-amounts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .amount-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+        
+        .amount-option:hover {
+            background: rgba(153, 69, 255, 0.2);
+            border-color: var(--primary);
+        }
+        
+        .amount-option.active {
+            background: var(--gradient-primary);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .amount-input-container {
+            margin-bottom: 30px;
+        }
+        
+        .amount-input {
+            width: 100%;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            transition: var(--transition);
+        }
+        
+        .amount-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(153, 69, 255, 0.2);
+        }
+        
+        .payment-summary {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+        }
+        
+        .summary-item.total {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 18px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .payment-btn {
+            width: 100%;
+            padding: 20px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .payment-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(153, 69, 255, 0.4);
+        }
+        
+        .payment-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .transaction-history {
+            margin-top: 30px;
+        }
+        
+        .transaction-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+            border-left: 4px solid transparent;
+        }
+        
+        .transaction-item.deposit {
+            border-left-color: var(--success);
+        }
+        
+        .transaction-item.withdrawal {
+            border-left-color: var(--warning);
+        }
+        
+        .transaction-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: rgba(0, 212, 170, 0.2);
+            color: var(--success);
+        }
+        
+        .status-pending {
+            background: rgba(255, 179, 71, 0.2);
+            color: var(--warning);
+        }
+        
+        .status-failed {
+            background: rgba(255, 77, 109, 0.2);
+            color: var(--loss);
+        }
+        
+        /* Toast Container */
+        .toast-container {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            z-index: 9999;
+        }
+        
+        .toast {
+            background: var(--card-bg);
+            border-left: 4px solid var(--primary);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+        }
+        
+        .toast i {
+            font-size: 24px;
+            color: var(--primary);
+        }
+        
+        .toast.success {
+            border-left-color: var(--success);
+        }
+        
+        .toast.error {
+            border-left-color: var(--loss);
+        }
+        
+        .toast.warning {
+            border-left-color: var(--warning);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                width: 250px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                padding: 15px;
+            }
+            
+            .nav-menu {
+                display: flex;
+                padding: 0;
+                overflow-x: auto;
+            }
+            
+            .nav-item {
+                white-space: nowrap;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+            }
+            
+            .nav-item.active {
+                border-bottom-color: var(--primary);
+            }
+            
+            .sidebar-footer {
+                display: none;
+            }
+            
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .top-header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .balance-display {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .trade-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .lot-controls {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .trades-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .payment-methods {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .payment-amounts {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Pages -->
+    <div id="authPages" class="auth-container">
+        <!-- Login Page -->
+        <div id="loginPage" class="auth-box">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div>
+                        <h1 class="auth-title">Solana Power Trader</h1>
+                        <p class="auth-subtitle">Trade the future, powered by Solana</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="auth-form">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="loginEmail" class="form-input" placeholder="Enter your email">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password">
+                </div>
+                
+                <button class="btn btn-primary" onclick="login()">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+                
+                <div style="text-align: center; margin: 20px 0; color: var(--text-secondary);">or</div>
+                
+                <button class="btn btn-google" onclick="signInWithGoogle()">
+                    <i class="fab fa-google"></i> Sign In with Google
+                </button>
+            </div>
+            
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="#" class="auth-link" onclick="showSignupPage()">Create Account</a></p>
+            </div>
+        </div>
+        
+        <!-- Signup Page -->
+        <div id="signupPage" class="auth-box hidden">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div>
+                        <h1 class="auth-title">Create Account</h1>
+                        <p class="auth-subtitle">Join thousands of successful traders</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="auth-form">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="signupName" class="form-input" placeholder="Enter full name">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="signupUsername" class="form-input" placeholder="Choose username">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="signupEmail" class="form-input" placeholder="Enter email">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Date of Birth</label>
+                    <input type="date" id="signupDob" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="signupPassword" class="form-input" placeholder="Create password">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" id="signupConfirmPassword" class="form-input" placeholder="Confirm password">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">4-Digit Transaction PIN</label>
+                    <input type="password" id="signupPin" class="form-input" placeholder="XXXX" maxlength="4" pattern="\d{4}">
+                </div>
+                
+                <button class="btn btn-primary" onclick="signup()">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </div>
+            
+            <div class="auth-footer">
+                <p>Already have an account? <a href="#" class="auth-link" onclick="showLoginPage()">Sign In</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main App Container -->
+    <div id="appContainer" class="app-container hidden">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="logo-text">SOL TRADER</div>
+                </div>
+            </div>
+            
+            <div class="nav-menu">
+                <div class="nav-item active" onclick="showPage('dashboard')">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                    <span class="nav-badge" id="liveBadge">LIVE</span>
+                </div>
+                <div class="nav-item" onclick="showPage('trades')">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>My Trades</span>
+                </div>
+                <div class="nav-item" onclick="showPage('leaderboard')">
+                    <i class="fas fa-trophy"></i>
+                    <span>Leaderboard</span>
+                </div>
+                <div class="nav-item" onclick="showPage('profile')">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </div>
+                <div class="nav-item" onclick="showPage('premium')">
+                    <i class="fas fa-crown"></i>
+                    <span>Premium</span>
+                </div>
+                <div class="nav-item" onclick="showPage('referrals')">
+                    <i class="fas fa-users"></i>
+                    <span>Referrals</span>
+                </div>
+                <div class="nav-item" onclick="showPage('transactions')">
+                    <i class="fas fa-history"></i>
+                    <span>Transactions</span>
+                </div>
+                <div class="nav-item" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile" onclick="showPage('profile')">
+                    <img src="https://ui-avatars.com/api/?name=Trader&background=9945FF&color=fff" 
+                         alt="Profile" class="user-avatar" id="sidebarAvatar">
+                    <div class="user-info">
+                        <h4 id="sidebarUsername">Trader</h4>
+                        <p id="sidebarBalance">$0.00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top Header -->
+            <div class="top-header">
+                <div class="header-left">
+                    <h1 id="pageTitle">Dashboard</h1>
+                    <p id="pageSubtitle">Real-time trading with Solana</p>
+                </div>
+                
+                <div class="balance-display">
+                    <div class="balance-card">
+                        <div class="balance-label">Available Balance</div>
+                        <div class="balance-amount" id="headerBalance">
+                            <i class="fas fa-wallet"></i>
+                            <span>$0.00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="balance-card" onclick="showDepositModal()" style="cursor: pointer;">
+                        <div class="balance-label">Deposit Funds</div>
+                        <div class="balance-amount" style="color: var(--success);">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Add Funds</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Page Content -->
+            <div class="page-container">
+                <!-- Dashboard Page -->
+                <div id="dashboardPage" class="page">
+                    <div class="dashboard-grid">
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i class="fas fa-chart-candlestick"></i>
+                                    SOL/USD Live Chart
+                                </div>
+                                <div class="timer" id="chartTimer">20</div>
+                            </div>
+                            <div id="tradingview-chart"></div>
+                        </div>
+                        
+                        <div class="trading-panel">
+                            <div class="round-info-card">
+                                <div class="phase-text" id="phaseText">TRADING OPEN</div>
+                                <div class="timer" id="roundTimer">20</div>
+                                <div class="phase-text">Next round starts in</div>
+                            </div>
+                            
+                            <div class="trade-controls">
+                                <button class="trade-btn buy-btn" onclick="placeTrade('buy')">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>BUY</span>
+                                </button>
+                                <button class="trade-btn sell-btn" onclick="placeTrade('sell')">
+                                    <i class="fas fa-arrow-down"></i>
+                                    <span>SELL</span>
+                                </button>
+                            </div>
+                            
+                            <div class="lot-controls">
+                                <button class="lot-btn active" onclick="setLotSize(0.01)">0.01</button>
+                                <button class="lot-btn" onclick="setLotSize(0.05)">0.05</button>
+                                <button class="lot-btn" onclick="setLotSize(0.1)">0.1</button>
+                                <button class="lot-btn" onclick="setLotSize(0.5)">0.5</button>
+                            </div>
+                            
+                            <div class="tp-sl-grid">
+                                <div>
+                                    <label class="form-label">Take Profit</label>
+                                    <input type="number" id="takeProfit" class="tp-sl-input" value="40" placeholder="TP pips">
+                                </div>
+                                <div>
+                                    <label class="form-label">Stop Loss</label>
+                                    <input type="number" id="stopLoss" class="tp-sl-input" value="20" placeholder="SL pips">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Open Trades Section -->
+                    <div class="open-trades-container">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <i class="fas fa-briefcase"></i>
+                                Open Trades
+                            </div>
+                            <div class="players-count" id="openTradesCount">0 Trades</div>
+                        </div>
+                        <div class="trades-grid" id="openTradesGrid"></div>
+                    </div>
+                    
+                    <!-- Live Traders Section -->
+                    <div class="players-container">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <i class="fas fa-users"></i>
+                                Live Traders
+                            </div>
+                            <div class="players-count" id="playersCount">0 Online</div>
+                        </div>
+                        <div class="players-grid" id="playersGrid"></div>
+                    </div>
+                </div>
+                
+                <!-- Profile Page -->
+                <div id="profilePage" class="page hidden">
+                    <div class="profile-container">
+                        <div class="profile-header">
+                            <div class="profile-avatar-container">
+                                <img src="https://ui-avatars.com/api/?name=Trader&background=9945FF&color=fff" 
+                                     alt="Profile" class="profile-avatar" id="profileAvatar">
+                                <button class="avatar-upload-btn" onclick="document.getElementById('avatarUpload').click()">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                                <input type="file" id="avatarUpload" accept="image/*" hidden onchange="uploadProfilePicture()">
+                            </div>
+                            <div class="profile-info">
+                                <h2 id="profileName">Trader Name</h2>
+                                <p id="profileEmail">trader@email.com</p>
+                                <p id="profileUsername">@trader</p>
+                                <div class="profile-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="totalTrades">0</span>
+                                        <span class="stat-label">Total Trades</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="winRate">0%</span>
+                                        <span class="stat-label">Win Rate</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="totalProfit">$0</span>
+                                        <span class="stat-label">Total Profit</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-grid">
+                            <div class="profile-card">
+                                <h3><i class="fas fa-cog"></i> Account Settings</h3>
+                                <div class="settings-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Full Name</label>
+                                        <input type="text" id="profileFullName" class="form-input" placeholder="Full Name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Username</label>
+                                        <input type="text" id="profileUsernameInput" class="form-input" placeholder="Username">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" id="profileEmailInput" class="form-input" placeholder="Email">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Transaction PIN</label>
+                                        <input type="password" id="profilePinInput" class="form-input" placeholder="4-digit PIN" maxlength="4">
+                                    </div>
+                                    <button class="btn btn-primary" onclick="updateProfile()">
+                                        <i class="fas fa-save"></i> Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="profile-card">
+                                <h3><i class="fas fa-wallet"></i> Account Balance: <span id="profileBalance">$0.00</span></h3>
+                                <div class="payment-actions">
+                                    <button class="btn btn-primary" onclick="showDepositModal()">
+                                        <i class="fas fa-arrow-down"></i> Deposit
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="showWithdrawalModal()">
+                                        <i class="fas fa-arrow-up"></i> Withdraw
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Trades History Page -->
+                <div id="tradesPage" class="page hidden">
+                    <div class="profile-card">
+                        <h3><i class="fas fa-history"></i> Trade History</h3>
+                        <div id="tradeHistoryList" class="transaction-history"></div>
+                    </div>
+                </div>
+                
+                <!-- Transactions Page -->
+                <div id="transactionsPage" class="page hidden">
+                    <div class="profile-card">
+                        <h3><i class="fas fa-exchange-alt"></i> Transaction History</h3>
+                        <div id="transactionsList" class="transaction-history"></div>
+                    </div>
+                </div>
+                
+                <!-- Referrals Page -->
+                <div id="referralsPage" class="page hidden">
+                    <div class="profile-card">
+                        <h3><i class="fas fa-users"></i> Referral Program</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                            Invite friends and earn $1 for every 10 active referrals. Each referral must make a deposit and trade at least once.
+                        </p>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Your Referral Link</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="referralLink" class="form-input" readonly value="Loading...">
+                                <button class="btn btn-primary" onclick="copyReferralLink()">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-stats" style="margin-top: 30px;">
+                            <div class="stat-item">
+                                <span class="stat-value" id="referralCount">0</span>
+                                <span class="stat-label">Total Referrals</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="referralEarnings">$0</span>
+                                <span class="stat-label">Total Earnings</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="activeReferrals">0</span>
+                                <span class="stat-label">Active Referrals</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Premium Page -->
+                <div id="premiumPage" class="page hidden">
+                    <div class="profile-card">
+                        <h3><i class="fas fa-crown"></i> Premium Features</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 30px;">
+                            Upgrade to unlock advanced trading features and exclusive assets.
+                        </p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+                            <div style="text-align: center; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius);">
+                                <h4 style="margin-bottom: 15px; color: var(--text-primary);">Free Tier</h4>
+                                <div style="font-size: 32px; font-weight: 800; color: var(--secondary); margin-bottom: 20px;">$0</div>
+                                <ul style="list-style: none; text-align: left; color: var(--text-secondary);">
+                                    <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--success);"></i> Trade SOL/USD</li>
+                                    <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--success);"></i> Basic Trading</li>
+                                    <li style="margin-bottom: 10px;"><i class="fas fa-times" style="color: var(--loss);"></i> XAU/USD Trading</li>
+                                    <li style="margin-bottom: 10px;"><i class="fas fa-times" style="color: var(--loss);"></i> BTC/USD Trading</li>
+                                </ul>
+                            </div>
+                            
+                            <div style="text-align: center; padding: 20px; border: 2px solid var(--primary); border-radius: var(--radius); background: rgba(153, 69, 255, 0.1);">
+                                <h4 style="margin-bottom: 15px; color: var(--primary);">Premium Tier</h4>
+                                <div style="font-size: 32px; font-weight: 800; color: var(--secondary); margin-bottom: 20px;">$10</div>
+                                <ul style="list-style: none; text-align: left; color: var(--text-secondary);">
+                                    <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--success);"></i> Trade SOL/USD</li>
+                                    <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--success);"></i> Advanced Trading</li>
+                                    <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--success);"></i> XAU/USD Trading</li>
+                                    <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--success);"></i> BTC/USD Trading</li>
+                                    <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--success);"></i> Priority Support</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="upgradeToPremium()" style="width: 100%;">
+                            <i class="fas fa-crown"></i> Upgrade to Premium - $10
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Leaderboard Page -->
+                <div id="leaderboardPage" class="page hidden">
+                    <div class="profile-card">
+                        <h3><i class="fas fa-trophy"></i> Top Traders</h3>
+                        <div id="leaderboardList" style="margin-top: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Deposit Modal -->
+    <div id="depositModal" class="payment-modal hidden">
+        <div class="payment-content">
+            <div class="payment-header">
+                <h2 class="payment-title"><i class="fas fa-arrow-down"></i> Deposit Funds</h2>
+                <button class="close-payment" onclick="closePaymentModal()">×</button>
+            </div>
+            
+            <div class="payment-methods">
+                <div class="payment-method active" data-method="card" onclick="selectPaymentMethod('card')">
+                    <i class="fas fa-credit-card"></i>
+                    <div>Card</div>
+                </div>
+                <div class="payment-method" data-method="bank" onclick="selectPaymentMethod('bank')">
+                    <i class="fas fa-university"></i>
+                    <div>Bank Transfer</div>
+                </div>
+            </div>
+            
+            <div class="payment-amounts">
+                <div class="amount-option" onclick="selectAmount(10)">$10</div>
+                <div class="amount-option" onclick="selectAmount(25)">$25</div>
+                <div class="amount-option active" onclick="selectAmount(50)">$50</div>
+                <div class="amount-option" onclick="selectAmount(100)">$100</div>
+                <div class="amount-option" onclick="selectAmount(250)">$250</div>
+                <div class="amount-option" onclick="selectAmount(500)">$500</div>
+            </div>
+            
+            <div class="amount-input-container">
+                <input type="number" id="depositAmount" class="amount-input" placeholder="Enter custom amount" value="50" min="5" max="10000">
+            </div>
+            
+            <div class="payment-summary">
+                <div class="summary-item">
+                    <span>Amount:</span>
+                    <span id="depositSummaryAmount">$50.00</span>
+                </div>
+                <div class="summary-item">
+                    <span>Fee (2.5%):</span>
+                    <span id="depositFee">$1.25</span>
+                </div>
+                <div class="summary-item total">
+                    <span>Total to pay:</span>
+                    <span id="depositTotal">$51.25</span>
+                </div>
+            </div>
+            
+            <button class="payment-btn" onclick="processDeposit()" id="depositBtn">
+                <i class="fas fa-lock"></i>
+                Proceed to Payment
+            </button>
+            
+            <div style="text-align: center; margin-top: 20px; color: var(--text-secondary); font-size: 14px;">
+                <i class="fas fa-shield-alt"></i> Secure payment powered by Korapay
+            </div>
+        </div>
+    </div>
+    
+    <!-- Withdrawal Modal -->
+    <div id="withdrawalModal" class="payment-modal hidden">
+        <div class="payment-content">
+            <div class="payment-header">
+                <h2 class="payment-title"><i class="fas fa-arrow-up"></i> Withdraw Funds</h2>
+                <button class="close-payment" onclick="closePaymentModal()">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Bank Account Details</label>
+                <div style="display: grid; gap: 15px; margin-bottom: 20px;">
+                    <input type="text" id="bankName" class="form-input" placeholder="Bank Name">
+                    <input type="text" id="accountNumber" class="form-input" placeholder="Account Number">
+                    <input type="text" id="accountName" class="form-input" placeholder="Account Name">
+                </div>
+            </div>
+            
+            <div class="payment-amounts">
+                <div class="amount-option" onclick="selectWithdrawAmount(20)">$20</div>
+                <div class="amount-option" onclick="selectWithdrawAmount(50)">$50</div>
+                <div class="amount-option active" onclick="selectWithdrawAmount(100)">$100</div>
+                <div class="amount-option" onclick="selectWithdrawAmount(200)">$200</div>
+                <div class="amount-option" onclick="selectWithdrawAmount(500)">$500</div>
+                <div class="amount-option" onclick="selectWithdrawAmount(1000)">$1,000</div>
+            </div>
+            
+            <div class="amount-input-container">
+                <input type="number" id="withdrawAmount" class="amount-input" placeholder="Enter withdrawal amount" value="100" min="20" max="10000">
+            </div>
+            
+            <div class="payment-summary">
+                <div class="summary-item">
+                    <span>Withdrawal Amount:</span>
+                    <span id="withdrawSummaryAmount">$100.00</span>
+                </div>
+                <div class="summary-item">
+                    <span>Fee (1.5%):</span>
+                    <span id="withdrawFee">$1.50</span>
+                </div>
+                <div class="summary-item">
+                    <span>Tax (10%):</span>
+                    <span id="withdrawTax">$10.00</span>
+                </div>
+                <div class="summary-item total">
+                    <span>You will receive:</span>
+                    <span id="withdrawTotal">$88.50</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Transaction PIN</label>
+                <input type="password" id="withdrawPin" class="form-input" placeholder="Enter 4-digit PIN" maxlength="4">
+            </div>
+            
+            <button class="payment-btn" onclick="processWithdrawal()" id="withdrawBtn">
+                <i class="fas fa-paper-plane"></i>
+                Process Withdrawal
+            </button>
+            
+            <div style="text-align: center; margin-top: 20px; color: var(--text-secondary); font-size: 14px;">
+                <i class="fas fa-info-circle"></i> Processing time: 24-48 hours
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Main JavaScript -->
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVZkRPI9CkfG-FcLgsvoI4d3XZ5Su0kig",
+            authDomain: "casa-89b8b.firebaseapp.com",
+            projectId: "casa-89b8b",
+            storageBucket: "casa-89b8b.firebasestorage.app",
+            messagingSenderId: "514297483398",
+            appId: "1:514297483398:web:664f0a6891fe707c54c107",
+            measurementId: "G-GWSMFD0JKS"
+        };
+        
+        // Korapay Configuration
+        const KORAPAY_PUBLIC_KEY = "pk_live_ksZpFkWrTV9mDChRzUPGb5s2cX2BHGriUAYYtJX8";
+        
+        // Initialize Firebase
+        let firebaseInitialized = false;
+        let auth, db, storage, provider;
+        let currentUser = null;
+        let userData = null;
+        let currentRound = 1;
+        let roundPhase = 'trading';
+        let roundTime = 20;
+        let countdownInterval;
+        let lotSize = 0.01;
+        let openTrades = [];
+        let allPlayers = [];
+        let currentPrice = 100;
+        let selectedPaymentMethod = 'card';
+        let selectedAmount = 50;
+        let selectedWithdrawAmount = 100;
+        
+        function initializeFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                storage = firebase.storage();
+                provider = new firebase.auth.GoogleAuthProvider();
+                
+                firebaseInitialized = true;
+                console.log("Firebase initialized successfully");
+                
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        console.log("User signed in:", user.email);
+                        currentUser = user;
+                        showApp();
+                        loadUserData();
+                    } else {
+                        console.log("User signed out");
+                        showAuth();
+                    }
+                });
+                
+            } catch (error) {
+                console.error("Firebase initialization error:", error);
+                showToast("Failed to initialize Firebase. Please refresh.", "error");
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', initializeFirebase);
+        
+        // UI Functions
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-circle';
+            if (type === 'warning') icon = 'exclamation-triangle';
+            
+            toast.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <div>${message}</div>
+            `;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+        
+        function showPage(pageName) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            
+            // Show selected page
+            document.getElementById(`${pageName}Page`).classList.remove('hidden');
+            
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                if (item.textContent.includes(pageName.charAt(0).toUpperCase() + pageName.slice(1))) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Update page title
+            const pageTitles = {
+                dashboard: 'Dashboard',
+                profile: 'Profile',
+                leaderboard: 'Leaderboard',
+                premium: 'Premium',
+                referrals: 'Referrals',
+                trades: 'Trade History',
+                transactions: 'Transactions'
+            };
+            
+            document.getElementById('pageTitle').textContent = pageTitles[pageName];
+            
+            // Load page-specific data
+            if (pageName === 'transactions') loadTransactionHistory();
+            if (pageName === 'trades') loadTradeHistory();
+            if (pageName === 'leaderboard') loadLeaderboard();
+        }
+        
+        function showAuth() {
+            document.getElementById('authPages').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+        }
+        
+        function showApp() {
+            document.getElementById('authPages').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            initTradingView();
+        }
+        
+        function showLoginPage() {
+            document.getElementById('signupPage').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('hidden');
+        }
+        
+        function showSignupPage() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('signupPage').classList.remove('hidden');
+        }
+        
+        // Authentication Functions
+        async function login() {
+            if (!firebaseInitialized) {
+                showToast("Please wait, initializing...", "error");
+                return;
+            }
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                showToast("Please enter email and password", "error");
+                return;
+            }
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                showToast("Login successful!", "success");
+            } catch (error) {
+                console.error("Login error:", error);
+                let errorMessage = "Login failed: ";
+                switch(error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage += "No account found";
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage += "Incorrect password";
+                        break;
+                    default:
+                        errorMessage += error.message;
+                }
+                showToast(errorMessage, "error");
+            }
+        }
+        
+        async function signup() {
+            if (!firebaseInitialized) {
+                showToast("Please wait, initializing...", "error");
+                return;
+            }
+            
+            const name = document.getElementById('signupName').value;
+            const username = document.getElementById('signupUsername').value;
+            const email = document.getElementById('signupEmail').value;
+            const dob = document.getElementById('signupDob').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            const pin = document.getElementById('signupPin').value;
+            
+            // Validation
+            if (!name || !username || !email || !dob || !password || !confirmPassword || !pin) {
+                showToast("Please fill all fields", "error");
+                return;
+            }
+            
+            const birthDate = new Date(dob);
+            const age = new Date().getFullYear() - birthDate.getFullYear();
+            if (age < 18) {
+                showToast("You must be 18+ to register", "error");
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showToast("Passwords don't match", "error");
+                return;
+            }
+            
+            if (pin.length !== 4 || !/^\d+$/.test(pin)) {
+                showToast("Enter valid 4-digit PIN", "error");
+                return;
+            }
+            
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Create user document
+                await db.collection('users').doc(user.uid).set({
+                    uid: user.uid,
+                    name: name,
+                    username: username.toLowerCase(),
+                    email: email,
+                    dob: dob,
+                    pin: pin,
+                    balance: 1.00,
+                    totalTrades: 0,
+                    wins: 0,
+                    losses: 0,
+                    joinDate: new Date().toISOString(),
+                    isPremium: false,
+                    profilePic: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=9945FF&color=fff`,
+                    referralCode: generateReferralCode(),
+                    referredBy: null,
+                    referralCount: 0,
+                    totalProfit: 0,
+                    winRate: 0
+                });
+                
+                showToast("Account created! You have $1.00 bonus", "success");
+            } catch (error) {
+                console.error("Signup error:", error);
+                let errorMessage = "Signup failed: ";
+                switch(error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage += "Email already registered";
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage += "Password too weak";
+                        break;
+                    default:
+                        errorMessage += error.message;
+                }
+                showToast(errorMessage, "error");
+            }
+        }
+        
+        async function signInWithGoogle() {
+            if (!firebaseInitialized) {
+                showToast("Please wait, initializing...", "error");
+                return;
+            }
+            
+            try {
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+                
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                
+                if (!userDoc.exists) {
+                    await db.collection('users').doc(user.uid).set({
+                        uid: user.uid,
+                        name: user.displayName || user.email.split('@')[0],
+                        username: user.email.split('@')[0].toLowerCase(),
+                        email: user.email,
+                        balance: 1.00,
+                        totalTrades: 0,
+                        wins: 0,
+                        losses: 0,
+                        joinDate: new Date().toISOString(),
+                        isPremium: false,
+                        profilePic: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email.split('@')[0])}&background=9945FF&color=fff`,
+                        referralCode: generateReferralCode(),
+                        referralCount: 0,
+                        totalProfit: 0,
+                        winRate: 0
+                    });
+                }
+                
+                showToast("Google sign-in successful!", "success");
+            } catch (error) {
+                console.error("Google sign-in error:", error);
+                showToast("Google sign-in failed", "error");
+            }
+        }
+        
+        function generateReferralCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+        
+        // User Data Management
+        async function loadUserData() {
+            currentUser = auth.currentUser;
+            if (!currentUser) return;
+            
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                
+                if (userDoc.exists) {
+                    userData = userDoc.data();
+                    
+                    // Update UI
+                    updateProfileUI();
+                    updateSidebarUI();
+                    updateHeaderUI();
+                    
+                    // Listen for real-time updates
+                    db.collection('users').doc(currentUser.uid).onSnapshot((doc) => {
+                        if (doc.exists) {
+                            userData = doc.data();
+                            updateUI();
+                        }
+                    });
+                    
+                    // Load open trades
+                    loadOpenTrades();
+                    // Load players
+                    loadPlayers();
+                    // Start round
+                    startRound();
+                    // Load referral link
+                    loadReferralLink();
+                }
+            } catch (error) {
+                console.error("Error loading user data:", error);
+            }
+        }
+        
+        function updateProfileUI() {
+            document.getElementById('profileName').textContent = userData.name;
+            document.getElementById('profileEmail').textContent = userData.email;
+            document.getElementById('profileUsername').textContent = `@${userData.username}`;
+            document.getElementById('profileAvatar').src = userData.profilePic;
+            document.getElementById('profileFullName').value = userData.name;
+            document.getElementById('profileUsernameInput').value = userData.username;
+            document.getElementById('profileEmailInput').value = userData.email;
+            document.getElementById('profilePinInput').value = userData.pin || '';
+            document.getElementById('totalTrades').textContent = userData.totalTrades || 0;
+            document.getElementById('winRate').textContent = `${userData.winRate || 0}%`;
+            document.getElementById('totalProfit').textContent = `$${userData.totalProfit || 0}`;
+            document.getElementById('profileBalance').textContent = `$${userData.balance?.toFixed(2) || '0.00'}`;
+        }
+        
+        function updateSidebarUI() {
+            document.getElementById('sidebarUsername').textContent = userData.name;
+            document.getElementById('sidebarBalance').textContent = `$${userData.balance?.toFixed(2) || '0.00'}`;
+            document.getElementById('sidebarAvatar').src = userData.profilePic;
+        }
+        
+        function updateHeaderUI() {
+            document.getElementById('headerBalance').innerHTML = `
+                <i class="fas fa-wallet"></i>
+                <span>$${userData.balance?.toFixed(2) || '0.00'}</span>
+            `;
+        }
+        
+        function updateUI() {
+            updateProfileUI();
+            updateSidebarUI();
+            updateHeaderUI();
+        }
+        
+        // Trading Functions
+        function initTradingView() {
+            if (typeof TradingView === 'undefined') {
+                setTimeout(initTradingView, 1000);
+                return;
+            }
+            
+            new TradingView.widget({
+                "container_id": "tradingview-chart",
+                "width": "100%",
+                "height": "450",
+                "symbol": "COINBASE:SOLUSD",
+                "interval": "1",
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#1A1A2E",
+                "enable_publishing": false,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "studies": ["Volume@tv-basicstudies", "MovingAverage@tv-basicstudies"],
+                "show_popup_button": true,
+                "popup_width": "1000",
+                "popup_height": "650"
+            });
+        }
+        
+        function startRound() {
+            roundTime = 20;
+            roundPhase = 'trading';
+            document.getElementById('phaseText').textContent = 'TRADING OPEN';
+            document.getElementById('liveBadge').textContent = 'LIVE';
+            document.getElementById('liveBadge').style.background = 'var(--success)';
+            
+            clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(() => {
+                roundTime--;
+                document.getElementById('roundTimer').textContent = roundTime;
+                document.getElementById('chartTimer').textContent = roundTime;
+                
+                if (roundTime === 10) {
+                    roundPhase = 'locking';
+                    document.getElementById('phaseText').textContent = 'TRADING LOCKED';
+                    showToast("Trading locked for 10 seconds", "warning");
+                } else if (roundTime === 0) {
+                    roundPhase = 'live';
+                    document.getElementById('phaseText').textContent = 'LIVE TRADING';
+                    simulatePriceMovement();
+                    showToast("Live trading started!", "success");
+                } else if (roundTime === -15) {
+                    endRound();
+                }
+            }, 1000);
+        }
+        
+        function simulatePriceMovement() {
+            let price = currentPrice;
+            const priceInterval = setInterval(() => {
+                const change = (Math.random() - 0.5) * 2;
+                price += change;
+                currentPrice = price;
+                
+                updateTradeProfits();
+                
+                if (roundPhase !== 'live') {
+                    clearInterval(priceInterval);
+                }
+            }, 500);
+        }
+        
+        function setLotSize(size) {
+            lotSize = size;
+            document.querySelectorAll('.lot-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (parseFloat(btn.textContent) === size) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+        
+        async function placeTrade(type) {
+            if (roundPhase !== 'trading') {
+                showToast("Trading not allowed in current phase", "error");
+                return;
+            }
+            
+            if (!userData) {
+                showToast("Please wait, loading user data", "error");
+                return;
+            }
+            
+            const tp = parseFloat(document.getElementById('takeProfit').value) || 40;
+            const sl = parseFloat(document.getElementById('stopLoss').value) || 20;
+            const tradeCost = lotSize * 100;
+            
+            if (userData.balance < tradeCost) {
+                showToast("Insufficient balance", "error");
+                return;
+            }
+            
+            try {
+                const tradeData = {
+                    userId: currentUser.uid,
+                    username: userData.username,
+                    profilePic: userData.profilePic,
+                    type: type,
+                    lotSize: lotSize,
+                    entryPrice: currentPrice,
+                    takeProfit: tp,
+                    stopLoss: sl,
+                    timestamp: new Date().toISOString(),
+                    round: currentRound,
+                    status: 'open',
+                    currentProfit: 0,
+                    profitPercent: 0
+                };
+                
+                const tradeRef = await db.collection('activeTrades').add(tradeData);
+                
+                const newBalance = userData.balance - tradeCost;
+                await db.collection('users').doc(currentUser.uid).update({
+                    balance: newBalance
+                });
+                
+                tradeData.id = tradeRef.id;
+                openTrades.push(tradeData);
+                
+                updateOpenTradesUI();
+                showToast(`${type.toUpperCase()} trade placed successfully!`, "success");
+                
+            } catch (error) {
+                console.error("Error placing trade:", error);
+                showToast("Failed to place trade", "error");
+            }
+        }
+        
+        function updateTradeProfits() {
+            openTrades.forEach(trade => {
+                const priceDiff = currentPrice - trade.entryPrice;
+                const multiplier = trade.type === 'buy' ? 1 : -1;
+                trade.currentProfit = priceDiff * 10 * multiplier;
+                trade.profitPercent = (trade.currentProfit / (trade.lotSize * 100)) * 100;
+                
+                // Check TP/SL
+                if (trade.currentProfit >= trade.takeProfit) {
+                    closeTrade(trade.id, 'tp');
+                } else if (trade.currentProfit <= -trade.stopLoss) {
+                    closeTrade(trade.id, 'sl');
+                }
+            });
+            
+            updateOpenTradesUI();
+        }
+        
+        async function loadOpenTrades() {
+            try {
+                const snapshot = await db.collection('activeTrades')
+                    .where('userId', '==', currentUser.uid)
+                    .where('status', '==', 'open')
+                    .get();
+                
+                openTrades = [];
+                snapshot.forEach(doc => {
+                    openTrades.push({ id: doc.id, ...doc.data() });
+                });
+                
+                updateOpenTradesUI();
+                
+            } catch (error) {
+                console.error("Error loading open trades:", error);
+            }
+        }
+        
+        function updateOpenTradesUI() {
+            const container = document.getElementById('openTradesGrid');
+            container.innerHTML = '';
+            
+            document.getElementById('openTradesCount').textContent = `${openTrades.length} Trades`;
+            
+            openTrades.forEach(trade => {
+                const profitClass = trade.currentProfit >= 0 ? 'profit-positive' : 'profit-negative';
+                const profitSign = trade.currentProfit >= 0 ? '+' : '';
+                
+                const tradeCard = document.createElement('div');
+                tradeCard.className = `trade-card ${trade.type}`;
+                tradeCard.innerHTML = `
+                    <div class="trade-header">
+                        <div class="trade-type ${trade.type}">
+                            <i class="fas fa-${trade.type === 'buy' ? 'arrow-up' : 'arrow-down'}"></i>
+                            ${trade.type.toUpperCase()}
+                        </div>
+                        <div class="trade-profit ${profitClass}">
+                            ${profitSign}$${trade.currentProfit.toFixed(2)}
+                        </div>
+                    </div>
+                    
+                    <div class="trade-details">
+                        <div class="detail-item">
+                            <label>Lot Size</label>
+                            <span>${trade.lotSize}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Entry Price</label>
+                            <span>$${trade.entryPrice.toFixed(2)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Take Profit</label>
+                            <span>$${trade.takeProfit}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Stop Loss</label>
+                            <span>$${trade.stopLoss}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="trade-actions">
+                        <button class="action-btn close-btn" onclick="closeTrade('${trade.id}', 'manual')">
+                            <i class="fas fa-times"></i> Close Trade
+                        </button>
+                    </div>
+                `;
+                container.appendChild(tradeCard);
+            });
+        }
+        
+        async function closeTrade(tradeId, reason) {
+            try {
+                const tradeIndex = openTrades.findIndex(t => t.id === tradeId);
+                if (tradeIndex === -1) return;
+                
+                const trade = openTrades[tradeIndex];
+                const finalProfit = trade.currentProfit || 0;
+                const tradeValue = trade.lotSize * 100;
+                
+                const newBalance = userData.balance + tradeValue + finalProfit;
+                
+                await db.collection('users').doc(currentUser.uid).update({
+                    balance: newBalance,
+                    totalTrades: firebase.firestore.FieldValue.increment(1),
+                    totalProfit: firebase.firestore.FieldValue.increment(finalProfit),
+                    [finalProfit >= 0 ? 'wins' : 'losses']: firebase.firestore.FieldValue.increment(1)
+                });
+                
+                await db.collection('tradeHistory').add({
+                    ...trade,
+                    exitPrice: currentPrice,
+                    exitTime: new Date().toISOString(),
+                    closeReason: reason,
+                    finalProfit: finalProfit,
+                    status: 'closed',
+                    userId: currentUser.uid
+                });
+                
+                await db.collection('activeTrades').doc(tradeId).delete();
+                
+                openTrades.splice(tradeIndex, 1);
+                updateOpenTradesUI();
+                
+                const message = reason === 'tp' ? 'Take profit hit!' :
+                              reason === 'sl' ? 'Stop loss triggered!' :
+                              'Trade closed manually';
+                showToast(`${message} Profit: $${finalProfit.toFixed(2)}`, 
+                         finalProfit >= 0 ? 'success' : 'error');
+                
+            } catch (error) {
+                console.error("Error closing trade:", error);
+                showToast("Failed to close trade", "error");
+            }
+        }
+        
+        // Players Management
+        async function loadPlayers() {
+            try {
+                const snapshot = await db.collection('activeTrades')
+                    .where('round', '==', currentRound)
+                    .get();
+                
+                allPlayers = [];
+                snapshot.forEach(doc => {
+                    allPlayers.push(doc.data());
+                });
+                
+                updatePlayersUI();
+                
+            } catch (error) {
+                console.error("Error loading players:", error);
+            }
+        }
+        
+        function updatePlayersUI() {
+            const container = document.getElementById('playersGrid');
+            container.innerHTML = '';
+            
+            document.getElementById('playersCount').textContent = `${allPlayers.length} Online`;
+            
+            // Sort by profit
+            allPlayers.sort((a, b) => (b.currentProfit || 0) - (a.currentProfit || 0));
+            
+            allPlayers.forEach(player => {
+                const profitClass = (player.currentProfit || 0) >= 0 ? 'positive' : 'negative';
+                const profitSign = (player.currentProfit || 0) >= 0 ? '+' : '';
+                
+                const playerCard = document.createElement('div');
+                playerCard.className = 'player-card';
+                playerCard.innerHTML = `
+                    <img src="${player.profilePic}" alt="${player.username}" class="player-avatar">
+                    <div class="player-info">
+                        <div class="player-name">${player.username}</div>
+                        <div class="player-stats">
+                            <span>${player.type.toUpperCase()}</span>
+                            <span>Lot: ${player.lotSize}</span>
+                        </div>
+                    </div>
+                    <div class="player-profit ${profitClass}">
+                        ${profitSign}$${(player.currentProfit || 0).toFixed(2)}
+                    </div>
+                `;
+                container.appendChild(playerCard);
+            });
+        }
+        
+        // Profile Functions
+        async function uploadProfilePicture() {
+            const file = document.getElementById('avatarUpload').files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                showToast("Please select an image file", "error");
+                return;
+            }
+            
+            try {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    document.getElementById('profileAvatar').src = e.target.result;
+                    document.getElementById('sidebarAvatar').src = e.target.result;
+                    
+                    showToast("Profile picture updated!", "success");
+                };
+                reader.readAsDataURL(file);
+                
+            } catch (error) {
+                console.error("Error uploading profile picture:", error);
+                showToast("Failed to update profile picture", "error");
+            }
+        }
+        
+        async function updateProfile() {
+            try {
+                const fullName = document.getElementById('profileFullName').value;
+                const username = document.getElementById('profileUsernameInput').value;
+                const email = document.getElementById('profileEmailInput').value;
+                const pin = document.getElementById('profilePinInput').value;
+                
+                const updates = {};
+                if (fullName) updates.name = fullName;
+                if (username) updates.username = username.toLowerCase();
+                if (email) updates.email = email;
+                if (pin && pin.length === 4) updates.pin = pin;
+                
+                await db.collection('users').doc(currentUser.uid).update(updates);
+                showToast("Profile updated successfully!", "success");
+                
+            } catch (error) {
+                console.error("Error updating profile:", error);
+                showToast("Failed to update profile", "error");
+            }
+        }
+        
+        // Payment Functions
+        function showDepositModal() {
+            document.getElementById('depositModal').classList.remove('hidden');
+            updateDepositSummary();
+        }
+        
+        function showWithdrawalModal() {
+            document.getElementById('withdrawalModal').classList.remove('hidden');
+            updateWithdrawalSummary();
+        }
+        
+        function closePaymentModal() {
+            document.querySelectorAll('.payment-modal').forEach(modal => {
+                modal.classList.add('hidden');
+            });
+        }
+        
+        function selectPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            document.querySelectorAll('.payment-method').forEach(el => {
+                el.classList.remove('active');
+                if (el.dataset.method === method) {
+                    el.classList.add('active');
+                }
+            });
+        }
+        
+        function selectAmount(amount) {
+            selectedAmount = amount;
+            document.getElementById('depositAmount').value = amount;
+            document.querySelectorAll('.amount-option').forEach(el => {
+                el.classList.remove('active');
+                if (parseInt(el.textContent.replace('$', '')) === amount) {
+                    el.classList.add('active');
+                }
+            });
+            updateDepositSummary();
+        }
+        
+        function selectWithdrawAmount(amount) {
+            selectedWithdrawAmount = amount;
+            document.getElementById('withdrawAmount').value = amount;
+            document.querySelectorAll('.amount-option').forEach(el => {
+                el.classList.remove('active');
+                const optionAmount = parseInt(el.textContent.replace('$', '').replace(',', ''));
+                if (optionAmount === amount) {
+                    el.classList.add('active');
+                }
+            });
+            updateWithdrawalSummary();
+        }
+        
+        function updateDepositSummary() {
+            const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
+            const fee = amount * 0.025; // 2.5% fee
+            const total = amount + fee;
+            
+            document.getElementById('depositSummaryAmount').textContent = `$${amount.toFixed(2)}`;
+            document.getElementById('depositFee').textContent = `$${fee.toFixed(2)}`;
+            document.getElementById('depositTotal').textContent = `$${total.toFixed(2)}`;
+        }
+        
+        function updateWithdrawalSummary() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+            const fee = amount * 0.015; // 1.5% fee
+            const tax = amount * 0.10; // 10% tax
+            const total = amount - fee - tax;
+            
+            document.getElementById('withdrawSummaryAmount').textContent = `$${amount.toFixed(2)}`;
+            document.getElementById('withdrawFee').textContent = `$${fee.toFixed(2)}`;
+            document.getElementById('withdrawTax').textContent = `$${tax.toFixed(2)}`;
+            document.getElementById('withdrawTotal').textContent = `$${total.toFixed(2)}`;
+        }
+        
+        async function processDeposit() {
+            const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
+            const fee = amount * 0.025;
+            const total = amount + fee;
+            
+            if (amount < 5) {
+                showToast("Minimum deposit is $5", "error");
+                return;
+            }
+            
+            if (amount > 10000) {
+                showToast("Maximum deposit is $10,000", "error");
+                return;
+            }
+            
+            const depositBtn = document.getElementById('depositBtn');
+            depositBtn.disabled = true;
+            depositBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            try {
+                // Create transaction record
+                const transactionRef = await db.collection('transactions').add({
+                    userId: currentUser.uid,
+                    type: 'deposit',
+                    amount: amount,
+                    fee: fee,
+                    total: total,
+                    method: selectedPaymentMethod,
+                    status: 'pending',
+                    timestamp: new Date().toISOString(),
+                    reference: `DEP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    userEmail: userData.email,
+                    userName: userData.name
+                });
+                
+                // Initialize Korapay payment
+                window.Korapay.initialize({
+                    key: KORAPAY_PUBLIC_KEY,
+                    reference: transactionRef.id,
+                    amount: total * 100, // Convert to kobo/cents
+                    currency: "USD",
+                    customer: {
+                        name: userData.name,
+                        email: userData.email
+                    },
+                    metadata: {
+                        userId: currentUser.uid,
+                        transactionId: transactionRef.id,
+                        type: 'deposit'
+                    },
+                    onClose: function() {
+                        depositBtn.disabled = false;
+                        depositBtn.innerHTML = '<i class="fas fa-lock"></i> Proceed to Payment';
+                        showToast("Payment cancelled", "warning");
+                    },
+                    onSuccess: async function(response) {
+                        console.log("Payment success:", response);
+                        
+                        // Update transaction status
+                        await transactionRef.update({
+                            status: 'successful',
+                            korapayReference: response.reference,
+                            processedAt: new Date().toISOString()
+                        });
+                        
+                        // Update user balance
+                        const newBalance = (userData.balance || 0) + amount;
+                        await db.collection('users').doc(currentUser.uid).update({
+                            balance: newBalance
+                        });
+                        
+                        showToast(`Deposit successful! $${amount} added to your balance`, "success");
+                        closePaymentModal();
+                        
+                        depositBtn.disabled = false;
+                        depositBtn.innerHTML = '<i class="fas fa-lock"></i> Proceed to Payment';
+                        
+                        // Refresh user data
+                        loadUserData();
+                        loadTransactionHistory();
+                    },
+                    onFailed: async function(response) {
+                        console.log("Payment failed:", response);
+                        
+                        await transactionRef.update({
+                            status: 'failed',
+                            korapayReference: response.reference,
+                            failedReason: response.message,
+                            processedAt: new Date().toISOString()
+                        });
+                        
+                        showToast("Payment failed: " + response.message, "error");
+                        
+                        depositBtn.disabled = false;
+                        depositBtn.innerHTML = '<i class="fas fa-lock"></i> Proceed to Payment';
+                    }
+                });
+                
+            } catch (error) {
+                console.error("Deposit error:", error);
+                showToast("Payment processing failed. Please try again.", "error");
+                depositBtn.disabled = false;
+                depositBtn.innerHTML = '<i class="fas fa-lock"></i> Proceed to Payment';
+            }
+        }
+        
+        async function processWithdrawal() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+            const bankName = document.getElementById('bankName').value;
+            const accountNumber = document.getElementById('accountNumber').value;
+            const accountName = document.getElementById('accountName').value;
+            const pin = document.getElementById('withdrawPin').value;
+            
+            if (amount < 20) {
+                showToast("Minimum withdrawal is $20", "error");
+                return;
+            }
+            
+            if (amount > 10000) {
+                showToast("Maximum withdrawal is $10,000", "error");
+                return;
+            }
+            
+            if (!bankName || !accountNumber || !accountName) {
+                showToast("Please fill all bank details", "error");
+                return;
+            }
+            
+            if (pin !== userData.pin) {
+                showToast("Invalid transaction PIN", "error");
+                return;
+            }
+            
+            const fee = amount * 0.015;
+            const tax = amount * 0.10;
+            const totalDeduction = fee + tax;
+            const userReceives = amount - totalDeduction;
+            
+            if (amount > (userData.balance || 0)) {
+                showToast("Insufficient balance", "error");
+                return;
+            }
+            
+            const withdrawBtn = document.getElementById('withdrawBtn');
+            withdrawBtn.disabled = true;
+            withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            try {
+                // Create withdrawal record
+                const transactionRef = await db.collection('transactions').add({
+                    userId: currentUser.uid,
+                    type: 'withdrawal',
+                    amount: amount,
+                    fee: fee,
+                    tax: tax,
+                    netAmount: userReceives,
+                    bankName: bankName,
+                    accountNumber: accountNumber,
+                    accountName: accountName,
+                    status: 'pending',
+                    timestamp: new Date().toISOString(),
+                    reference: `WDL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    userEmail: userData.email,
+                    userName: userData.name
+                });
+                
+                // Deduct from user balance
+                const newBalance = (userData.balance || 0) - amount;
+                await db.collection('users').doc(currentUser.uid).update({
+                    balance: newBalance
+                });
+                
+                showToast(`Withdrawal request submitted! $${userReceives.toFixed(2)} will be sent to your bank account within 24-48 hours.`, "success");
+                closePaymentModal();
+                
+                withdrawBtn.disabled = false;
+                withdrawBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Process Withdrawal';
+                
+                loadUserData();
+                loadTransactionHistory();
+                
+            } catch (error) {
+                console.error("Withdrawal error:", error);
+                showToast("Withdrawal processing failed. Please try again.", "error");
+                withdrawBtn.disabled = false;
+                withdrawBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Process Withdrawal';
+            }
+        }
+        
+        // Load Transaction History
+        async function loadTransactionHistory() {
+            if (!currentUser) return;
+            
+            try {
+                const snapshot = await db.collection('transactions')
+                    .where('userId', '==', currentUser.uid)
+                    .orderBy('timestamp', 'desc')
+                    .limit(20)
+                    .get();
+                
+                const container = document.getElementById('transactionsList');
+                container.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary)">No transactions yet</div>';
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const transaction = doc.data();
+                    const item = document.createElement('div');
+                    item.className = `transaction-item ${transaction.type}`;
+                    
+                    const date = new Date(transaction.timestamp).toLocaleDateString();
+                    const time = new Date(transaction.timestamp).toLocaleTimeString();
+                    
+                    let statusClass = 'status-pending';
+                    if (transaction.status === 'successful') statusClass = 'status-success';
+                    if (transaction.status === 'failed') statusClass = 'status-failed';
+                    
+                    let amountDisplay = '';
+                    if (transaction.type === 'deposit') {
+                        amountDisplay = `+$${transaction.amount.toFixed(2)}`;
+                    } else {
+                        amountDisplay = `-$${transaction.amount.toFixed(2)}`;
+                    }
+                    
+                    item.innerHTML = `
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${transaction.type.toUpperCase()}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary)">${date} ${time}</div>
+                        </div>
+                        <div style="font-weight: 700; font-size: 18px; color: ${transaction.type === 'deposit' ? 'var(--success)' : 'var(--warning)'}">
+                            ${amountDisplay}
+                        </div>
+                        <div class="transaction-status ${statusClass}">
+                            ${transaction.status}
+                        </div>
+                    `;
+                    
+                    container.appendChild(item);
+                });
+                
+            } catch (error) {
+                console.error("Error loading transactions:", error);
+            }
+        }
+        
+        // Load Trade History
+        async function loadTradeHistory() {
+            if (!currentUser) return;
+            
+            try {
+                const snapshot = await db.collection('tradeHistory')
+                    .where('userId', '==', currentUser.uid)
+                    .orderBy('exitTime', 'desc')
+                    .limit(20)
+                    .get();
+                
+                const container = document.getElementById('tradeHistoryList');
+                container.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary)">No trade history yet</div>';
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const trade = doc.data();
+                    const item = document.createElement('div');
+                    item.className = `transaction-item ${trade.type}`;
+                    
+                    const date = new Date(trade.exitTime).toLocaleDateString();
+                    const profitClass = trade.finalProfit >= 0 ? 'profit-positive' : 'profit-negative';
+                    const profitSign = trade.finalProfit >= 0 ? '+' : '';
+                    
+                    item.innerHTML = `
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: ${trade.type === 'buy' ? 'var(--buy)' : 'var(--sell)'}">
+                                ${trade.type.toUpperCase()} ${trade.lotSize} LOT
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary)">${date}</div>
+                        </div>
+                        <div style="font-weight: 700; font-size: 18px;" class="${profitClass}">
+                            ${profitSign}$${trade.finalProfit.toFixed(2)}
+                        </div>
+                    `;
+                    
+                    container.appendChild(item);
+                });
+                
+            } catch (error) {
+                console.error("Error loading trade history:", error);
+            }
+        }
+        
+        // Referral Functions
+        function loadReferralLink() {
+            if (!userData) return;
+            
+            const referralLink = `https://solanatrader.com/ref/${userData.referralCode}`;
+            document.getElementById('referralLink').value = referralLink;
+            document.getElementById('referralCount').textContent = userData.referralCount || 0;
+            document.getElementById('referralEarnings').textContent = `$${Math.floor((userData.referralCount || 0) / 10)}`;
+            document.getElementById('activeReferrals').textContent = userData.referralCount || 0;
+        }
+        
+        function copyReferralLink() {
+            const linkInput = document.getElementById('referralLink');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            showToast("Referral link copied to clipboard!", "success");
+        }
+        
+        // Premium Functions
+        async function upgradeToPremium() {
+            if (userData.balance < 10) {
+                showToast("Insufficient balance. Please deposit first.", "error");
+                return;
+            }
+            
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    isPremium: true,
+                    balance: userData.balance - 10
+                });
+                
+                showToast("Premium upgrade successful! You can now trade XAU/USD and BTC/USD.", "success");
+                
+            } catch (error) {
+                console.error("Error upgrading premium:", error);
+                showToast("Failed to upgrade to premium", "error");
+            }
+        }
+        
+        // Leaderboard Functions
+        async function loadLeaderboard() {
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                const leaderboard = [];
+                
+                usersSnapshot.forEach(doc => {
+                    const user = doc.data();
+                    if (user.totalTrades > 0) {
+                        leaderboard.push({
+                            username: user.username,
+                            totalProfit: user.totalProfit || 0,
+                            winRate: user.winRate || 0,
+                            totalTrades: user.totalTrades || 0
+                        });
+                    }
+                });
+                
+                // Sort by profit
+                leaderboard.sort((a, b) => b.totalProfit - a.totalProfit);
+                
+                const container = document.getElementById('leaderboardList');
+                container.innerHTML = '';
+                
+                leaderboard.slice(0, 10).forEach((user, index) => {
+                    const rank = index + 1;
+                    const row = document.createElement('div');
+                    row.className = 'transaction-item';
+                    row.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                            <div style="font-weight: 800; font-size: 24px; color: ${rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? '#cd7f32' : 'var(--primary)'}">
+                                ${rank}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600;">${user.username}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary)">Win Rate: ${user.winRate}%</div>
+                            </div>
+                        </div>
+                        <div style="font-weight: 700; font-size: 18px; color: ${user.totalProfit >= 0 ? 'var(--profit)' : 'var(--loss)'}">
+                            $${user.totalProfit.toFixed(2)}
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error("Error loading leaderboard:", error);
+            }
+        }
+        
+        // Round End Functions
+        function endRound() {
+            clearInterval(countdownInterval);
+            roundPhase = 'ended';
+            document.getElementById('phaseText').textContent = 'ROUND ENDED';
+            document.getElementById('liveBadge').textContent = 'ENDED';
+            document.getElementById('liveBadge').style.background = 'var(--warning)';
+            
+            // Distribute profits
+            openTrades.forEach(trade => {
+                closeTrade(trade.id, 'round_end');
+            });
+            
+            // Show power-up animation
+            document.querySelector('.logo-icon').style.animation = 'pulse 2s infinite';
+            
+            // Start new round after 5 seconds
+            setTimeout(() => {
+                currentRound++;
+                document.querySelector('.logo-icon').style.animation = '';
+                startRound();
+            }, 5000);
+        }
+        
+        // Logout
+        async function logout() {
+            try {
+                await auth.signOut();
+                showToast("Logged out successfully", "success");
+            } catch (error) {
+                console.error("Error signing out:", error);
+            }
+        }
+        
+        // Event Listeners
+        document.getElementById('depositAmount').addEventListener('input', updateDepositSummary);
+        document.getElementById('withdrawAmount').addEventListener('input', updateWithdrawalSummary);
+        
+        // Auto price updates
+        setInterval(() => {
+            if (roundPhase === 'trading' || roundPhase === 'live') {
+                const change = (Math.random() - 0.5) * 0.5;
+                currentPrice += change;
+                updateTradeProfits();
+            }
+        }, 1000);
+        
+        // Initialize
+        setTimeout(() => {
+            if (typeof TradingView !== 'undefined') {
+                initTradingView();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
